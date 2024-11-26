@@ -1,21 +1,49 @@
 {
-  "name": "coffee-admin-dashboard",
-  "version": "0.1.0",
+  "name": "modernize-coffee-dashboard",
+  "version": "1.0.0",
   "private": true,
+  "scripts": {
+    "start": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0"
+  },
   "dependencies": {
+    "@emotion/react": "^11.13.5",
+    "@emotion/styled": "^11.13.5",
+    "@mui/material": "^6.1.8",
+    "@mui/icons-material": "^6.1.8",
+    "@mui/system": "^5.14.11",
+    "@mui/lab": "^6.0.0-beta.16",
+    "@svgr/rollup": "^8.1.0",
+    "@tabler/icons-react": "^2.35.0",
     "@testing-library/jest-dom": "^5.17.0",
     "@testing-library/react": "^13.4.0",
     "@testing-library/user-event": "^13.5.0",
+    "firebase": "^11.0.2",
+    "lodash": "^4.17.21",
+    "prop-types": "^15.8.1",
     "react": "^18.3.1",
+    "react-apexcharts": "^1.4.1",
     "react-dom": "^18.3.1",
+    "react-helmet": "^6.1.0",
+    "react-mui-sidebar": "^1.3.8",
+    "react-router": "^6.16.0",
+    "react-router-dom": "^6.16.0",
     "react-scripts": "5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject"
+  "devDependencies": {
+    "@types/react": "^18.2.15",
+    "@vitejs/plugin-react": "^4.0.3",
+    "eslint": "^8.45.0",
+    "eslint-config-react-app": "^7.0.1",
+    "eslint-plugin-react": "^7.x.x", 
+    "eslint-plugin-react-hooks": "^4.x.x", 
+    "eslint-plugin-react-refresh": "^0.x.x", 
+    "vite": "^4.x.x"
   },
   "eslintConfig": {
     "extends": [
