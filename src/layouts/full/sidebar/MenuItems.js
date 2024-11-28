@@ -1,5 +1,5 @@
 import {
-  IconAperture, IconMenu, IconLayoutDashboard, IconLogin, IconMoodHappy, IconTypography, IconUserPlus
+  IconAperture, IconCup, IconLayoutDashboard, IconLogin, IconMoodHappy, IconTypography, IconUser
 } from '@tabler/icons-react';
 
 import { uniqueId } from 'lodash';
@@ -29,7 +29,7 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: 'Menu',
-    icon: IconMenu,
+    icon: IconCup,
     href: '/ui/shadow',
   },
   {
@@ -45,7 +45,7 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: 'User',
-    icon: IconUserPlus,
+    icon: IconUser,
     href: '/auth/user',
   },
   {

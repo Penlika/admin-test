@@ -27,6 +27,7 @@ const Router = [
       { path: '/icons', exact: true, element: <Icons /> },
       { path: '/ui/typography', exact: true, element: <TypographyPage /> },
       { path: '/ui/shadow', exact: true, element: <Shadow /> },
+      { path: '/auth/user', exact: true, element: <User /> },
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
   },
@@ -35,7 +36,6 @@ const Router = [
     element: <BlankLayout />,
     children: [
       { path: '404', element: <Error /> },
-      { path: '/auth/user', element: <User /> },
       { path: '/auth/login', element: <Login /> },
       { path: '*', element: <Navigate to="/auth/404" /> },
     ],
