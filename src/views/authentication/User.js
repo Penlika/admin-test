@@ -1,16 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { auth, createUserWithEmailAndPassword } from '../../firebase';
 import {
-  getFirestore,
-  collection,
-  getDocs,
-  addDoc,
-  deleteDoc,
-  updateDoc,
-  doc,
-} from 'firebase/firestore';
-import { getStorage, ref, deleteObject } from 'firebase/storage';
-import {
+  CssBaseline,
   Dialog,
   DialogTitle,
   DialogContent,
@@ -19,20 +9,33 @@ import {
   Button,
   Typography,
 } from '@mui/material';
+import {
+  getFirestore,
+  collection,
+  getDocs,
+  addDoc,
+  query,
+  where,
+  deleteDoc,
+  updateDoc,
+  doc,
+} from 'firebase/firestore';
+import { getStorage, ref, deleteObject } from 'firebase/storage';
+import { auth, createUserWithEmailAndPassword } from '../../firebase';
 import './AdminPage.css';
 
-const defaultProfilePicture = 'https://via.placeholder.com/150/000000/FFFFFF?text=User';
+const defaultProfilePicture = 'https://static.vecteezy.com/system/resources/previews/018/765/757/non_2x/user-profile-icon-in-flat-style-member-avatar-illustration-on-isolated-background-human-permission-sign-business-concept-vector.jpg';
 
 const AdminPage = () => {
   const [users, setUsers] = useState([]);
   const [newUser, setNewUser] = useState({
     email: '',
     password: '',
-    name: '',
+    confirmPassword: '',
+    username: '',
     phone: '',
     profilePicture: '',
     address: '',
-    paymentMethod: '',
   });
   const [imageFile, setImageFile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -69,6 +72,28 @@ const AdminPage = () => {
 
   const handleSaveUser = async () => {
     try {
+      if (newUser.password !== newUser.confirmPassword) {
+        alert('Passwords do not match!');
+        return;
+      }
+
+      if (!newUser.username.trim()) {
+        alert('Username is required.');
+        return;
+      }
+
+      // Check if username already exists
+      const usernameQuery = query(
+        collection(db, 'users'),
+        where('username', '==', newUser.username)
+      );
+      const usernameSnapshot = await getDocs(usernameQuery);
+
+      if (!usernameSnapshot.empty) {
+        alert('Username already exists. Please choose a different one.');
+        return;
+      }
+
       if (isEditing) {
         const userDoc = doc(db, 'users', editingUserId);
         await updateDoc(userDoc, { ...newUser });
@@ -100,11 +125,11 @@ const AdminPage = () => {
       setNewUser({
         email: '',
         password: '',
-        name: '',
+        confirmPassword: '',
+        username: '',
         phone: '',
         profilePicture: '',
         address: '',
-        paymentMethod: '',
       });
       setImageFile(null);
       setEditingUserId(null);
@@ -115,31 +140,17 @@ const AdminPage = () => {
     }
   };
 
-  const handleDeleteUser = async (userId, profilePicture, userEmail) => {
+  const handleDeleteUser = async (userId, profilePicture) => {
     try {
       console.log('Deleting user with ID:', userId);
-      
-      // Delete the user's profile picture from Storage if it exists
+
       if (profilePicture && profilePicture !== defaultProfilePicture) {
         const imageRef = ref(storage, profilePicture);
         await deleteObject(imageRef);
         console.log('Profile picture deleted from Storage.');
       }
 
-      // Delete user from Firestore
       await deleteDoc(doc(db, 'users', userId));
-
-      // Delete user from Authentication
-      const user = auth.currentUser; // Get the current authenticated user
-      if (user && user.email === userEmail) {
-        await user.delete(); // Delete the currently logged-in user
-        console.log('User deleted from Firebase Authentication.');
-      } else {
-        // If the user to be deleted is not the currently logged-in user,
-        // you need to have admin privileges to delete other users using the Admin SDK.
-        console.error('Cannot delete a user that is not the currently authenticated user.');
-        alert('You need to use admin privileges to delete other users.');
-      }
 
       setUsers(users.filter((user) => user.id !== userId));
       console.log('User deleted successfully.');
@@ -154,11 +165,11 @@ const AdminPage = () => {
       setNewUser({
         email: user.email,
         password: '',
-        name: user.name || '',
+        confirmPassword: '',
+        username: user.username || '',
         phone: user.phone || '',
         profilePicture: user.profilePicture || '',
         address: user.address || '',
-        paymentMethod: user.paymentMethod || '',
       });
       setEditingUserId(user.id);
       setIsEditing(true);
@@ -166,11 +177,11 @@ const AdminPage = () => {
       setNewUser({
         email: '',
         password: '',
-        name: '',
+        confirmPassword: '',
+        username: '',
         phone: '',
         profilePicture: '',
         address: '',
-        paymentMethod: '',
       });
       setIsEditing(false);
     }
@@ -182,11 +193,11 @@ const AdminPage = () => {
     setNewUser({
       email: '',
       password: '',
-      name: '',
+      confirmPassword: '',
+      username: '',
       phone: '',
       profilePicture: '',
       address: '',
-      paymentMethod: '',
     });
     setImageFile(null);
     setEditingUserId(null);
@@ -194,146 +205,147 @@ const AdminPage = () => {
   };
 
   return (
-    <div className="admin-page">
-      <h1>Admin Dashboard</h1>
-      <div className="admin-layout">
-        <section className="user-list">
-          <h2>Registered Users</h2>
-          {isLoading ? (
-            <p>Loading...</p>
-          ) : (
-            <table>
-              <thead>
-                <tr>
-                  <th>Profile</th>
-                  <th>Email</th>
-                  <th>Name</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.map((user) => (
-                  <tr key={user.id}>
-                    <td>
-                      <img
-                        src={user.profilePicture || defaultProfilePicture}
-                        alt="User Icon"
-                        className="profile-picture"
-                      />
-                    </td>
-                    <td>{user.email}</td>
-                    <td>{user.name || 'N/A'}</td>
-                    <td>
-                      <Button onClick={() => openDialog(user)}>Edit</Button>
-                      <Button onClick={() => handleDeleteUser(user.id, user.profilePicture, user.email)}>Delete</Button>
-                    </td>
+    <>
+      <CssBaseline />
+      <div className="admin-page">
+        <h1>Admin Dashboard</h1>
+        <div className="admin-layout">
+          <section className="user-list">
+            <h2>Registered Users</h2>
+            {isLoading ? (
+              <p>Loading...</p>
+            ) : (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Profile</th>
+                    <th>Email</th>
+                    <th>Username</th>
+                    <th>Phone</th>
+                    <th>Address</th>
+                    <th>Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
+                </thead>
+                <tbody>
+                  {users.map((user) => (
+                    <tr key={user.id}>
+                      <td>
+                        <img
+                          src={user.profilePicture || defaultProfilePicture}
+                          alt="User Icon"
+                          className="profile-picture"
+                        />
+                      </td>
+                      <td>{user.email || 'No information'}</td>
+                      <td>{user.username || 'No information'}</td>
+                      <td>{user.phone || 'No information'}</td>
+                      <td>{user.address || 'No information'}</td>
+                      <td>
+                        <Button onClick={() => openDialog(user)}>Edit</Button>
+                        <Button onClick={() => handleDeleteUser(user.id, user.profilePicture)}>Delete</Button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
 
-        <section className="add-user">
-          <Button
-            variant="contained"
-            sx={{
-              backgroundColor: 'blue',
-              color: 'white',
-              '&:hover': {
-                backgroundColor: 'white',
-                color: 'blue',
-                border: '1px solid blue',
-              },
-            }}
-            onClick={() => openDialog()}
-          >
-            Add User
-          </Button>
-        </section>
-      </div>
+          <section className="add-user">
+            <Button
+              variant="contained"
+              onClick={() => openDialog()}
+            >
+              Add User
+            </Button>
+          </section>
+        </div>
 
-      <Dialog open={isDialogOpen} onClose={closeDialog}>
-        <DialogTitle>{isEditing ? 'Edit User' : 'Add New User'}</DialogTitle>
-        <DialogContent>
-          <TextField
-            margin="dense"
-            label="Email (required)"
-            fullWidth
-            value={newUser.email}
-            onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
-            required
-          />
-          <TextField
-            margin="dense"
-            label="Password"
-            type="password"
-            fullWidth
-            value={newUser.password}
-            onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
-            required={!isEditing}
-          />
-          <TextField
-            margin="dense"
-            label="Name"
-            fullWidth
-            value={newUser.name}
-            onChange={(e) => setNewUser({ ...newUser, name: e.target.value })}
-          />
-          <TextField
-            margin="dense"
-            label="Phone"
-            fullWidth
-            value={newUser.phone}
-            onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
-          />
-          <TextField
-            margin="dense"
-            label="Address"
-            fullWidth
-            value={newUser.address}
-            onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
-          />
-          <TextField
-            margin="dense"
-            label="Payment Method"
-            fullWidth
-            value={newUser.paymentMethod}
-            onChange={(e) => setNewUser({ ...newUser, paymentMethod: e.target.value })}
-          />
-          <Button
-            variant="contained"
-            component="label"
-            fullWidth
-            sx={{ mt: 2 }}
-          >
-            Upload Image
-            <input
-              type="file"
-              hidden
-              accept="image/*"
-              onChange={handleImageChange}
+        <Dialog open={isDialogOpen} onClose={closeDialog}>
+          <DialogTitle>{isEditing ? 'Edit User' : 'Add New User'}</DialogTitle>
+          <DialogContent>
+            <TextField
+              margin="dense"
+              label="Email (required)"
+              fullWidth
+              value={newUser.email}
+              onChange={(e) => setNewUser({ ...newUser, email: e.target.value })}
+              required
             />
-          </Button>
-          {imageFile && (
-            <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px' }}>
-              <img
-                src={URL.createObjectURL(imageFile)}
-                alt="Selected"
-                style={{ width: '100px', height: '100px', objectFit: 'cover', marginRight: '10px', borderRadius: '5px' }}
+            <TextField
+              margin="dense"
+              label="Password"
+              type="password"
+              fullWidth
+              value={newUser.password}
+              onChange={(e) => setNewUser({ ...newUser, password: e.target.value })}
+              required={!isEditing}
+            />
+            <TextField
+              margin="dense"
+              label="Confirm Password"
+              type="password"
+              fullWidth
+              value={newUser.confirmPassword}
+              onChange={(e) => setNewUser({ ...newUser, confirmPassword: e.target.value })}
+              required={!isEditing}
+            />
+            <TextField
+              margin="dense"
+              label="Username (required)"
+              fullWidth
+              value={newUser.username}
+              onChange={(e) => setNewUser({ ...newUser, username: e.target.value })}
+              required
+            />
+            <TextField
+              margin="dense"
+              label="Phone"
+              fullWidth
+              value={newUser.phone}
+              onChange={(e) => setNewUser({ ...newUser, phone: e.target.value })}
+            />
+            <TextField
+              margin="dense"
+              label="Address"
+              fullWidth
+              value={newUser.address}
+              onChange={(e) => setNewUser({ ...newUser, address: e.target.value })}
+            />
+            <Button
+              variant="contained"
+              component="label"
+              fullWidth
+              sx={{ mt: 2 }}
+            >
+              Upload Image
+              <input
+                type="file"
+                hidden
+                accept="image/*"
+                onChange={handleImageChange}
               />
-              <Typography variant="body2">
-                Selected file: {imageFile.name}
-              </Typography>
-            </div>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={closeDialog}>Cancel</Button>
-          <Button onClick={handleSaveUser}>Save</Button>
-        </DialogActions>
-      </Dialog>
-    </div>
+            </Button>
+            {imageFile && (
+              <div style={{ display: 'flex', alignItems: 'center', marginTop: '10px' }}>
+                <img
+                  src={URL.createObjectURL(imageFile)}
+                  alt="Selected"
+                  style={{ width: '100px', height: '100px', objectFit: 'cover', marginRight: '10px', borderRadius: '5px' }}
+                />
+                <Typography variant="body2">
+                  Selected file: {imageFile.name}
+                </Typography>
+              </div>
+            )}
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={closeDialog}>Cancel</Button>
+            <Button onClick={handleSaveUser}>Save</Button>
+          </DialogActions>
+        </Dialog>
+      </div>
+    </>
   );
 };
 

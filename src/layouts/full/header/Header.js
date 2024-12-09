@@ -2,7 +2,6 @@ import { Box, AppBar, Toolbar, styled, Stack, IconButton} from '@mui/material';
 import PropTypes from 'prop-types';
 
 // components
-import Profile from './Profile';
 // import { IconBellRinging, IconMenu } from '@tabler/icons-react';
 import {IconMenu } from '@tabler/icons-react';
 const Header = (props) => {
@@ -61,9 +60,6 @@ const Header = (props) => {
 
         </IconButton> */}
         <Box flexGrow={1} />
-        <Stack spacing={1} direction="row" alignItems="center">
-          <Profile />
-        </Stack>
       </ToolbarStyled>
     </AppBarStyled>
   );

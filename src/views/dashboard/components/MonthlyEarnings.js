@@ -1,85 +1,149 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { 
+  Card, 
+  CardContent, 
+  Typography, 
+  Stack, 
+  Box,
+  CircularProgress
+} from '@mui/material';
 import Chart from 'react-apexcharts';
-import { useTheme } from '@mui/material/styles';
-import { Stack, Typography, Avatar, Fab } from '@mui/material';
-import { IconArrowDownRight, IconCurrencyDollar } from '@tabler/icons-react';
-import DashboardCard from '../../../components/shared/DashboardCard';
+import { db } from '../../../firebase'; // Remove auth import
+import { collection, getDocs, collectionGroup, query } from 'firebase/firestore';
 
 const MonthlyEarnings = () => {
-  // chart color
-  const theme = useTheme();
-  const secondary = theme.palette.secondary.main;
-  const secondarylight = '#f5fcff';
-  const errorlight = '#fdede8';
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [loading, setLoading] = useState(true);
 
-  // chart
-  const optionscolumnchart = {
+  useEffect(() => {
+    const fetchAllUsersMonthlyEarnings = async () => {
+      try {
+        // Use collectionGroup to query orderHistory across all users
+        const orderHistoryQuery = query(collectionGroup(db, 'orderHistory'));
+        const orderHistorySnapshot = await getDocs(orderHistoryQuery);
+
+        // Group orders by month and calculate earnings
+        const earningsByMonth = {};
+        let totalAmount = 0;
+
+        orderHistorySnapshot.docs.forEach(doc => {
+          const orderData = doc.data();
+          
+          // Only include completed orders
+          if (orderData.paymentStatus === 'completed') {
+            const orderDate = orderData.orderedAt?.toDate() || new Date();
+            const monthKey = `${orderDate.getFullYear()}-${orderDate.getMonth() + 1}`;
+            
+            earningsByMonth[monthKey] = (earningsByMonth[monthKey] || 0) + orderData.totalAmount;
+            totalAmount += orderData.totalAmount;
+          }
+        });
+
+        // Convert to chart-friendly format
+        const chartData = Object.entries(earningsByMonth)
+          .sort((a, b) => {
+            const [yearA, monthA] = a[0].split('-').map(Number);
+            const [yearB, monthB] = b[0].split('-').map(Number);
+            return yearA - yearB || monthA - monthB;
+          })
+          .map(([month, amount]) => ({
+            x: month,
+            y: parseFloat(amount.toFixed(2))
+          }));
+
+        setMonthlyData(chartData);
+        setTotalEarnings(totalAmount);
+        setLoading(false);
+      } catch (error) {
+        console.error('Error fetching monthly earnings for all users:', error);
+        setLoading(false);
+      }
+    };
+
+    fetchAllUsersMonthlyEarnings();
+  }, []);
+
+  // The rest of the component remains the same as the previous version
+  const chartOptions = {
     chart: {
       type: 'area',
-      fontFamily: "'Plus Jakarta Sans', sans-serif;",
-      foreColor: '#adb0bb',
-      toolbar: {
-        show: false,
-      },
-      height: 60,
-      sparkline: {
-        enabled: true,
-      },
-      group: 'sparklines',
+      toolbar: { show: false },
+      height: 180,
     },
-    stroke: {
-      curve: 'smooth',
-      width: 2,
+    xaxis: {
+      type: 'category',
+      categories: monthlyData.map(item => item.x),
+      labels: {
+        style: {
+          colors: '#888',
+        }
+      }
     },
-    fill: {
-      colors: [secondarylight],
-      type: 'solid',
-      opacity: 0.05,
-    },
-    markers: {
-      size: 0,
+    yaxis: {
+      labels: {
+        formatter: (val) => `$${val.toFixed(2)}`,
+        style: {
+          colors: '#888',
+        }
+      }
     },
     tooltip: {
-      theme: theme.palette.mode === 'dark' ? 'dark' : 'light',
+      theme: 'light',
+      y: {
+        formatter: (val) => `$${val.toFixed(2)}`,
+      }
     },
+    fill: {
+      type: 'gradient',
+      gradient: {
+        shadeIntensity: 1,
+        opacityFrom: 0.7,
+        opacityTo: 0.9,
+        stops: [0, 90, 100]
+      }
+    },
+    colors: ['#4CAF50']
   };
-  const seriescolumnchart = [
-    {
-      name: '',
-      color: secondary,
-      data: [25, 66, 20, 40, 12, 58, 20],
-    },
-  ];
+
+  const chartSeries = [{
+    name: 'Monthly Earnings',
+    data: monthlyData
+  }];
+
+  if (loading) {
+    return (
+      <Card>
+        <CardContent sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+          <CircularProgress />
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
-    <DashboardCard
-      title="Monthly Earnings"
-      action={
-        <Fab color="secondary" size="medium" sx={{color: '#ffffff'}}>
-          <IconCurrencyDollar width={24} />
-        </Fab>
-      }
-      footer={
-        <Chart options={optionscolumnchart} series={seriescolumnchart} type="area" height="60px" />
-      }
-    >
-      <>
-        <Typography variant="h3" fontWeight="700" mt="-20px">
-          $6,820
-        </Typography>
-        <Stack direction="row" spacing={1} my={1} alignItems="center">
-          <Avatar sx={{ bgcolor: errorlight, width: 27, height: 27 }}>
-            <IconArrowDownRight width={20} color="#FA896B" />
-          </Avatar>
-          <Typography variant="subtitle2" fontWeight="600">
-            +9%
+    <Card>
+      <CardContent>
+        <Stack spacing={2}>
+          <Typography variant="h6" fontWeight={600}>
+            Total Monthly Earnings
           </Typography>
-          <Typography variant="subtitle2" color="textSecondary">
-            last year
-          </Typography>
+          
+          <Box display="flex" justifyContent="space-between" alignItems="center">
+            <Typography variant="h4" fontWeight={700}>
+              ${totalEarnings.toFixed(2)}
+            </Typography>
+          </Box>
+
+          <Chart 
+            options={chartOptions}
+            series={chartSeries}
+            type="area"
+            height={180}
+          />
         </Stack>
-      </>
-    </DashboardCard>
+      </CardContent>
+    </Card>
   );
 };
 

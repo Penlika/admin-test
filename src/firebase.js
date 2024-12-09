@@ -1,4 +1,3 @@
-// src/firebase.js
 import { initializeApp } from 'firebase/app';
 import { getAuth, createUserWithEmailAndPassword } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
@@ -11,7 +10,7 @@ const firebaseConfig = {
   projectId: 'reacttest-26675',
   storageBucket: 'reacttest-26675.appspot.com',
   messagingSenderId: '583761591180',
-  appId: '1:583761591180:android:85b54aa16a808792e834a9',
+  appId: '1:583761591180:android:cb4da69569b783abe834a9',
 };
 
 // Initialize Firebase app

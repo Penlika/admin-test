@@ -1,7 +1,7 @@
 import { useMediaQuery, Box, Drawer } from '@mui/material';
 import SidebarItems from './SidebarItems';
 import { Sidebar, Logo } from 'react-mui-sidebar';
-import logo from '../../../assets/images/logos/dark1-logo.svg'
+import logo from '../../../assets/images/logos/coffee-shop.svg'
 
 const MSidebar = (props) => {
 

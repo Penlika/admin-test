@@ -1,5 +1,5 @@
 import {
-  IconAperture, IconCup, IconLayoutDashboard, IconLogin, IconMoodHappy, IconTypography, IconUser
+  IconCup, IconLayoutDashboard, IconLogin, IconMessage, IconUser
 } from '@tabler/icons-react';
 
 import { uniqueId } from 'lodash';
@@ -23,7 +23,7 @@ const Menuitems = [
   {
     id: uniqueId(),
     title: 'Feedback',
-    icon: IconTypography,
+    icon: IconMessage,
     href: '/ui/typography',
   },
   {
@@ -38,7 +38,7 @@ const Menuitems = [
   },
   {
     id: uniqueId(),
-    title: 'Login',
+    title: 'Logout',
     icon: IconLogin,
     href: '/auth/login',
   },
@@ -47,23 +47,7 @@ const Menuitems = [
     title: 'User',
     icon: IconUser,
     href: '/auth/user',
-  },
-  {
-    navlabel: true,
-    subheader: 'Extra',
-  },
-  {
-    id: uniqueId(),
-    title: 'Icons',
-    icon: IconMoodHappy,
-    href: '/icons',
-  },
-  {
-    id: uniqueId(),
-    title: 'Sample Page',
-    icon: IconAperture,
-    href: '/sample-page',
-  },
+  }
 ];
 
 export default Menuitems;
